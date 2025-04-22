@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+
 import java.time.LocalDateTime;
 
 @RestControllerAdvice
@@ -49,4 +51,15 @@ public class GlobalExceptionHandler {
                 request.getDescription(false).replace("uri=", ""));
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+public ResponseEntity<ErrorResponse> handleCircuitBreakerException(CallNotPermittedException ex, WebRequest request) {
+    ErrorResponse error = ErrorResponse.of(
+            HttpStatus.SERVICE_UNAVAILABLE.value(),
+            "Service Temporarily Unavailable",
+            "The weather service is currently experiencing issues. Please try again later.",
+            request.getDescription(false).replace("uri=", "")
+    );
+    return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
+}
 }

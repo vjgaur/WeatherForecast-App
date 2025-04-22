@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -24,6 +26,7 @@ public class NominatimClient {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final CircuitBreaker circuitBreaker;
     private static final String NOMINATIM_API_URL = "https://nominatim.openstreetmap.org/search";
 
     // Map of country codes to postal code patterns
@@ -39,9 +42,12 @@ public class NominatimClient {
     }
 
     @Autowired
-    public NominatimClient(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public NominatimClient(RestTemplate restTemplate, ObjectMapper objectMapper,
+            CircuitBreaker nominatimCircuitBreaker) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.circuitBreaker = nominatimCircuitBreaker;
+
     }
 
     /**
@@ -57,7 +63,19 @@ public class NominatimClient {
         if (zipCode == null || zipCode.trim().isEmpty()) {
             throw new GeocodingException("Postal code cannot be empty");
         }
+        // Wrap the API call with circuit breaker
+        return circuitBreaker.executeSupplier(() -> {
+            try {
+                return fetchCoordinates(zipCode, countryCode);
+            } catch (GeocodingException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
+    private Coordinates fetchCoordinates(String zipCode, String countryCode) throws GeocodingException {
         zipCode = zipCode.trim();
         countryCode = (countryCode == null || countryCode.trim().isEmpty()) ? "US" : countryCode.trim().toUpperCase();
 

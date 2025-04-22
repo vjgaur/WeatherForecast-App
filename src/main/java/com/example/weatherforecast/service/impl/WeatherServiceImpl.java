@@ -24,7 +24,7 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     @Override
-    @Cacheable(value = "weatherCache", key = "#zipCode + '_' + #countryCode", condition = "#result != null")
+    @Cacheable(value = "weatherCache", key = "#zipCode + '_' + #countryCode", unless = "#result == null")
     public WeatherResponse getWeatherForecast(String zipCode, String countryCode) throws WeatherServiceException {
         try {
             // Get coordinates for the ZIP code

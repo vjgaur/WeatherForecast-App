@@ -121,6 +121,11 @@
                 errorMessageDiv.style.display = 'block';
                 return;
             }
+            // Check for valid postal code format (basic check)
+            if (!/^[a-zA-Z0-9\s-]{2,10}$/.test(zipCode)) {
+                alert('Please enter a valid postal code format');
+                return;
+            }
 
             const resultDiv = document.getElementById('result');
             resultDiv.innerHTML = 'Loading...';

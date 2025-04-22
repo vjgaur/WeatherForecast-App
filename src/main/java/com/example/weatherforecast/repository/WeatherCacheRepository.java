@@ -17,7 +17,8 @@ public class WeatherCacheRepository {
     public boolean isInCache(String cacheKey) {
         Cache cache = cacheManager.getCache("weatherCache");
         if (cache != null) {
-            return cache.get(cacheKey) != null;
+            Cache.ValueWrapper wrapper = cache.get(cacheKey);
+            return wrapper != null && wrapper.get() != null;
         }
         return false;
     }
@@ -26,7 +27,7 @@ public class WeatherCacheRepository {
         Cache cache = cacheManager.getCache("weatherCache");
         if (cache != null) {
             Cache.ValueWrapper wrapper = cache.get(cacheKey);
-            if (wrapper != null) {
+            if (wrapper != null && wrapper.get() != null) {
                 WeatherResponse response = (WeatherResponse) wrapper.get();
                 response.setFromCache(true);
                 return response;

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -24,12 +25,15 @@ public class OpenMeteoClient {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final CircuitBreaker circuitBreaker;
     private static final String OPEN_METEO_API_URL = "https://api.open-meteo.com/v1/forecast";
 
     @Autowired
-    public OpenMeteoClient(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public OpenMeteoClient(RestTemplate restTemplate, ObjectMapper objectMapper,
+            CircuitBreaker openMeteoCircuitBreaker) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.circuitBreaker = openMeteoCircuitBreaker;
     }
 
     /**
@@ -41,7 +45,20 @@ public class OpenMeteoClient {
      * @throws WeatherServiceException if weather data fetch fails
      */
     public WeatherResponse getWeatherForecast(Coordinates coordinates, String zipCode) throws WeatherServiceException {
+        return circuitBreaker.executeSupplier(() -> {
+            try {
+                return fetchWeatherData(coordinates, zipCode);
+            } catch (WeatherServiceException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private WeatherResponse fetchWeatherData(Coordinates coordinates, String zipCode) throws WeatherServiceException {
         try {
+
             URI uri = UriComponentsBuilder.fromUriString(OPEN_METEO_API_URL)
                     .queryParam("latitude", coordinates.getLatitude())
                     .queryParam("longitude", coordinates.getLongitude())
@@ -100,16 +117,9 @@ public class OpenMeteoClient {
             }
 
             // Build response
-            return WeatherResponse.builder()
-                    .zipCode(zipCode)
-                    .coordinates(coordinates)
-                    .currentTemperature(currentTemp)
-                    .highTemperature(highTemp)
-                    .lowTemperature(lowTemp)
-                    .hourlyForecast(hourlyForecast)
-                    .timestamp(LocalDateTime.now())
-                    .fromCache(false)
-                    .build();
+            return WeatherResponse.builder().zipCode(zipCode).coordinates(coordinates).currentTemperature(currentTemp)
+                    .highTemperature(highTemp).lowTemperature(lowTemp).hourlyForecast(hourlyForecast)
+                    .timestamp(LocalDateTime.now()).fromCache(false).build();
 
         } catch (RestClientException e) {
             throw new WeatherServiceException("Error communicating with weather service: " + e.getMessage(), e);
