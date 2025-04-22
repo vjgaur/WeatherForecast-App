@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            padding: 10px;
+            width: 300px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 150px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .cache-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .cache-true {
+            background-color: #ffeb3b;
+            color: #333;
+        }
+        .cache-false {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .error-message {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Forecast Application</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="zipCode">Enter ZIP/Postal Code:</label>
+            <input type="text" id="zipCode" placeholder="e.g., 10001">
+        </div>
+        <div class="form-group">
+            <label for="countryCode">Select Country:</label>
+            <select id="countryCode">
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="GB">United Kingdom</option>
+                <option value="AU">Australia</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="JP">Japan</option>
+                <option value="IN">India</option>
+                <option value="IT">Italy</option>
+                <option value="ES">Spain</option>
+                <option value="NL">Netherlands</option>
+                <option value="BR">Brazil</option>
+                <option value="RU">Russia</option>
+                <option value="CN">China</option>
+            </select>
+        </div>
+        <button id="getWeather">Get Weather</button>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('getWeather').addEventListener('click', function() {
+            const zipCode = document.getElementById('zipCode').value.trim();
+            const countryCode = document.getElementById('countryCode').value;
+            const errorMessageDiv = document.getElementById('errorMessage');
+            
+            // Reset error message
+            errorMessageDiv.style.display = 'none';
+            errorMessageDiv.textContent = '';
+            
+            if (!zipCode) {
+                errorMessageDiv.textContent = 'Please enter a ZIP/Postal code';
+                errorMessageDiv.style.display = 'block';
+                return;
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Loading...';
+            resultDiv.style.display = 'block';
+
+            fetch(`/api/weather/zipcode/${zipCode}?countryCode=${countryCode}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(error => {
+                            throw new Error(error.message || 'Error fetching weather data');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Raw response:', data);
+                    
+                    let cacheStatus = data.fromCache ? 
+                        '<span class="cache-indicator cache-true">From Cache</span>' : 
+                        '<span class="cache-indicator cache-false">Fresh Data</span>';
+                    
+                    let hourlyForecast = '';
+                    data.hourlyForecast.slice(0, 24).forEach(hour => {
+                        try {
+                            // Extract time part from ISO string
+                            let timeStr = hour.time;
+                            if (timeStr.includes('T')) {
+                                timeStr = timeStr.split('T')[1].substring(0, 5);
+                            }
+                            hourlyForecast += `${timeStr}: ${hour.temperature}°C\n`;
+                        } catch (e) {
+                            console.error("Error parsing date:", e, hour.time);
+                            hourlyForecast += `${hour.time}: ${hour.temperature}°C\n`;
+                        }
+                    });
+
+                    resultDiv.innerHTML = `
+                        <h2>Weather for ${zipCode} ${cacheStatus}</h2>
+                        <p><strong>Current Temperature:</strong> ${data.currentTemperature}°C</p>
+                        <p><strong>High:</strong> ${data.highTemperature}°C | <strong>Low:</strong> ${data.lowTemperature}°C</p>
+                        <p><strong>Coordinates:</strong> Lat: ${data.coordinates.latitude}, Lon: ${data.coordinates.longitude}</p>
+                        <h3>24-Hour Forecast:</h3>
+                        <pre>${hourlyForecast}</pre>
+                        <p><small>Last updated: ${new Date(data.timestamp).toLocaleString()}</small></p>
+                    `;
+                })
+                .catch(error => {
+                let errorMessage = error.message;
+                
+                if (errorMessage.startsWith("Error getting coordinates:")) {
+                    errorMessage = errorMessage.substring("Error getting coordinates:".length).trim();
+                } else if (errorMessage.startsWith("Error:")) {
+                    errorMessage = errorMessage.substring("Error:".length).trim();
+                }
+                
+                errorMessageDiv.textContent = errorMessage;
+                errorMessageDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
