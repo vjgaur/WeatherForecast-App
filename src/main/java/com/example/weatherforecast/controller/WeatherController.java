@@ -17,7 +17,6 @@ public class WeatherController {
     private final WeatherService weatherService;
     private final WeatherCacheRepository cacheRepository;
 
-    @Autowired
     public WeatherController(WeatherService weatherService, WeatherCacheRepository cacheRepository) {
         this.weatherService = weatherService;
         this.cacheRepository = cacheRepository;

@@ -27,10 +27,13 @@ public class WeatherCacheRepository {
         Cache cache = cacheManager.getCache("weatherCache");
         if (cache != null) {
             Cache.ValueWrapper wrapper = cache.get(cacheKey);
-            if (wrapper != null && wrapper.get() != null) {
-                WeatherResponse response = (WeatherResponse) wrapper.get();
-                response.setFromCache(true);
-                return response;
+            if (wrapper != null) {
+                Object value = wrapper.get();
+                if (value instanceof WeatherResponse) {
+                    WeatherResponse response = (WeatherResponse) value;
+                    response.setFromCache(true);
+                    return response;
+                }
             }
         }
         return null;

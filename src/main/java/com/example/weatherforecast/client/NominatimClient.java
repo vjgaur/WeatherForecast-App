@@ -12,7 +12,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -41,7 +40,6 @@ public class NominatimClient {
         POSTAL_CODE_PATTERNS.put("AU", Pattern.compile("^\\d{4}$")); // AU: 1234
     }
 
-    @Autowired
     public NominatimClient(RestTemplate restTemplate, ObjectMapper objectMapper,
             CircuitBreaker nominatimCircuitBreaker) {
         this.restTemplate = restTemplate;

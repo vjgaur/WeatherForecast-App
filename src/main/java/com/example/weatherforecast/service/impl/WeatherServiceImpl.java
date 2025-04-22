@@ -17,7 +17,7 @@ public class WeatherServiceImpl implements WeatherService {
     private final GeocodingService geocodingService;
     private final OpenMeteoClient openMeteoClient;
 
-    @Autowired
+    
     public WeatherServiceImpl(GeocodingService geocodingService, OpenMeteoClient openMeteoClient) {
         this.geocodingService = geocodingService;
         this.openMeteoClient = openMeteoClient;

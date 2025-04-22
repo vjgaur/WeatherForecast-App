@@ -12,7 +12,7 @@ public class GeocodingServiceImpl implements GeocodingService {
 
     private final NominatimClient nominatimClient;
 
-    @Autowired
+    
     public GeocodingServiceImpl(NominatimClient nominatimClient) {
         this.nominatimClient = nominatimClient;
     }

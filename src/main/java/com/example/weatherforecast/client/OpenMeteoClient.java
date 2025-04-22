@@ -28,7 +28,6 @@ public class OpenMeteoClient {
     private final CircuitBreaker circuitBreaker;
     private static final String OPEN_METEO_API_URL = "https://api.open-meteo.com/v1/forecast";
 
-    @Autowired
     public OpenMeteoClient(RestTemplate restTemplate, ObjectMapper objectMapper,
             CircuitBreaker openMeteoCircuitBreaker) {
         this.restTemplate = restTemplate;
