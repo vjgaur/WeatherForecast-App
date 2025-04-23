@@ -9,9 +9,20 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * Configuration class for API client components.
+ * Sets up RestTemplate and other required beans for making API calls.
+ * 
+ * @since 1.0
+ */
 @Configuration
 public class ApiClientConfig {
-
+    /**
+     * Creates an ObjectMapper bean for JSON serialization and deserialization.
+     * Configured with appropriate modules and serialization settings.
+     * 
+     * @return A configured ObjectMapper instance
+     */
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -27,6 +38,12 @@ public class ApiClientConfig {
         return factory;
     }
 
+    /**
+     * Creates a RestTemplate bean for making HTTP requests to external APIs.
+     * Configured with appropriate connection and read timeouts.
+     * 
+     * @return A configured RestTemplate instance
+     */
     @Bean
     public RestTemplate restTemplate(ClientHttpRequestFactory clientHttpRequestFactory) {
         return new RestTemplate(clientHttpRequestFactory);

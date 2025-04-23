@@ -20,6 +20,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Client for interacting with the Open-Meteo weather API.
+ * Uses circuit breaker pattern to handle API failures gracefully.
+ */
 @Component
 public class OpenMeteoClient {
 
@@ -28,6 +32,14 @@ public class OpenMeteoClient {
     private final CircuitBreaker circuitBreaker;
     private static final String OPEN_METEO_API_URL = "https://api.open-meteo.com/v1/forecast";
 
+    /**
+     * Constructs a new OpenMeteoClient with required dependencies.
+     * 
+     * @param restTemplate            RestTemplate for making HTTP requests
+     * @param objectMapper            ObjectMapper for JSON
+     *                                serialization/deserialization
+     * @param openMeteoCircuitBreaker Circuit breaker for handling API failures
+     */
     public OpenMeteoClient(RestTemplate restTemplate, ObjectMapper objectMapper,
             CircuitBreaker openMeteoCircuitBreaker) {
         this.restTemplate = restTemplate;

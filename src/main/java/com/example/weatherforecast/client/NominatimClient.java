@@ -5,7 +5,6 @@ import com.example.weatherforecast.model.Coordinates;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -20,6 +19,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * Client for interacting with the Nominatim geocoding service.
+ * Provides functionality to convert zip/postal codes to geographic coordinates.
+ * Implements circuit breaker pattern for handling API failures gracefully.
+ * 
+ * @since 1.0
+ */
 @Component
 public class NominatimClient {
 
@@ -40,6 +46,14 @@ public class NominatimClient {
         POSTAL_CODE_PATTERNS.put("AU", Pattern.compile("^\\d{4}$")); // AU: 1234
     }
 
+    /**
+     * Constructs a new NominatimClient with required dependencies.
+     * 
+     * @param restTemplate            RestTemplate for making HTTP requests
+     * @param objectMapper            ObjectMapper for JSON
+     *                                serialization/deserialization
+     * @param nominatimCircuitBreaker Circuit breaker for handling API failures
+     */
     public NominatimClient(RestTemplate restTemplate, ObjectMapper objectMapper,
             CircuitBreaker nominatimCircuitBreaker) {
         this.restTemplate = restTemplate;
@@ -73,6 +87,13 @@ public class NominatimClient {
         });
     }
 
+    /**
+     * Builds the query URL for the Nominatim API request.
+     * 
+     * @param zipCode     The zip or postal code to geocode
+     * @param countryCode The ISO 3166-1 alpha-2 country code
+     * @return URL string for the API request
+     */
     private Coordinates fetchCoordinates(String zipCode, String countryCode) throws GeocodingException {
         zipCode = zipCode.trim();
         countryCode = (countryCode == null || countryCode.trim().isEmpty()) ? "US" : countryCode.trim().toUpperCase();
